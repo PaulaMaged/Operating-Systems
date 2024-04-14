@@ -1,0 +1,7 @@
+The threads are more likely to obey the FIFO shedpolicy specified in the thread attribute yet, their are 
+cases many cases when it behaves outside of the specified schedpolicy behavior expected.
+
+There is a priority given to threads, lets get each threads priority value. Maybe this is a candidate for
+the unexpected behavior.
+
+    All threads have the same priority as they are using the same attribute!
