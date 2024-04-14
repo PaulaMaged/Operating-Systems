@@ -5,3 +5,20 @@ There is a priority given to threads, lets get each threads priority value. Mayb
 the unexpected behavior.
 
     All threads have the same priority as they are using the same attribute!
+
+The next candidate to test is the schedinherit attribute that by default (PTHEAD_INHERIT_SCHED) 
+makes the created threads have the same scheduling attributes as the parent thread.
+
+    I am not sure what scheduling attributes are reffering to here. I am taking for granted that they are
+    referring to the scheduling policy from the name, of the attribute, but what about the priority param. 
+    Isn't that a scheduling attribute. Why is attributes a plural of only scheduling policy is inferred?
+
+        They refer to any attribute related to scheduling, to be more exact... schedpolicy and schedparam struct
+    
+    I will test this by checking for priority of newly created threads using the default inheritance. 
+    I will set the priority of main thread and other threads differently and check to see how this works.
+
+    Couple of lovely insights...
+        returned error values are useful. most notably - 22.
+        setting certain attributes makes errors arise (specifically with scheduling policy and priority)
+        default attribute of inheriting the parent's scheduling attributes works. Otherwise, doesn't.
