@@ -2,6 +2,9 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <sched.h>
 
 void * ThreadFunction(void *arguments)
 {
@@ -27,8 +30,10 @@ int main() {
 
   //using attr features of pthread
   pthread_attr_t tattr;
-  struct sched_param schedParam;
-  schedParam.sched_priority = 0;
+  struct sched_param schedParam = 
+  {
+    .sched_priority = 1,
+  };
 
   ret = pthread_attr_init(&tattr);
   if(ret != 0) {
@@ -44,7 +49,7 @@ int main() {
   if(ret != 0) {
     printf("pthread inherit scheduling: %d\n", ret);
     exit(EXIT_FAILURE);
-  }
+  } 
   ret = pthread_attr_setschedparam(&tattr, &schedParam);
   if(ret != 0) {
     printf("Setting scheduling priority failure: %d\n", ret);
