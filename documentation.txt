@@ -22,3 +22,13 @@ makes the created threads have the same scheduling attributes as the parent thre
         returned error values are useful. most notably - 22.
         setting certain attributes makes errors arise (specifically with scheduling policy and priority)
         default attribute of inheriting the parent's scheduling attributes works. Otherwise, doesn't.
+
+setcap on file allowed privileges of running real-time scheduling policies and setting 
+priorities, Or use sudo to run file if using real-time scheduling policies.
+
+After following this approach of setting privileges to the binaries, the threads took the correct parameters.
+The output followed very closely to what is expected, although their tends to occur breaks in the expected flow from time to time
+
+    I am suspecting multiple candidates. 
+        1. Other processes are overriding the main thread and so when it comes back, it chooses randomly
+        2. The printing method is causing a block which allows other threads to run.
