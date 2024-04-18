@@ -22,10 +22,14 @@ void sub_timespec(struct timespec t1, struct timespec t2, struct timespec *td)
 
 int main(void)
 {
+    int dummy = 0;
     struct timespec start, finish, delta;
-    clock_gettime(CLOCK_REALTIME, &start);
-    // sleep(2);
-    clock_gettime(CLOCK_REALTIME, &finish);
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &finish);
+    for(int i = 0; i < 1000000000; i++) {
+        dummy++;
+    }
+    sleep(5);
     sub_timespec(start, finish, &delta);
     printf("%d.%.9ld\n", (int)delta.tv_sec, delta.tv_nsec);
     return 0;
