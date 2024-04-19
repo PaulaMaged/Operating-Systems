@@ -34,3 +34,9 @@ The output followed very closely to what is expected, although their tends to oc
         2. The printing method is causing a block which allows other threads to run.
 
 Used clock_gettime(2) to get burst time of cpu threads!
+
+I need turnaround time. 
+
+    I can start a time before thread creation but the thread creation time itself will be counted.
+        1- Make the operation of the thread soo long that the time it takes to start a thread is insignificant
+        2- get the mean time it takes to execute this method and subtract it
