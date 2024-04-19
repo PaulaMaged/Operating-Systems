@@ -32,3 +32,5 @@ The output followed very closely to what is expected, although their tends to oc
     I am suspecting multiple candidates. 
         1. Other processes are overriding the main thread and so when it comes back, it chooses randomly
         2. The printing method is causing a block which allows other threads to run.
+
+Used clock_gettime(2) to get burst time of cpu threads!
