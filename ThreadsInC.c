@@ -1,4 +1,4 @@
-
+#define _GNU_SOURCE
 #define _POSIX_C_SOURCE 199309L
 // Importing the Pthread Library
 #include <pthread.h>
@@ -11,34 +11,41 @@
 #include <time.h>
 #include <math.h>
 
+
+const long NANOSECONDS_IN_SECOND = 1000000000;
 struct threadMetrics *threads[4];
 
 struct threadMetrics {
     pthread_t tid;
-    struct timespec burstTime;
+    double burstTime;
     double tat;
 };
+
+double timespecToDouble(struct timespec start, struct timespec end) {
+    double startnsToSec = (double) start.tv_nsec / NANOSECONDS_IN_SECOND;
+    double endnsToSec = (double) end.tv_nsec / NANOSECONDS_IN_SECOND;
+    double startSec = start.tv_sec + startnsToSec;
+    double endSec = end.tv_sec + endnsToSec;
+    double timeTaken = endSec - startSec;
+    return timeTaken;
+}
 
 void * ThreadFunction(void *arguments)
 {
     int dummy = 0;
-    struct timespec burst;
-    double timeStart = (double) clock();
-    for(int i = 1; i <= 10000000; i++) {
+    struct timespec start, end, burstStart, burstEnd, testStart, testEnd;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &burstStart); //for calculating burst time
+    for(int i = 1; i <= NANOSECONDS_IN_SECOND; i++) {
         dummy++;
     }
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &burst); //for calculating burst time
-    double timeEnd = (double) clock(); //for calculating tat time
-
-    //calculations
-    double timeDiff = timeEnd - timeStart; 
-    double timeTaken = timeDiff / CLOCKS_PER_SEC;
-
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &burstEnd); //for calculating burst time
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     //return results
     struct threadMetrics *currentThreadPointer = ((struct threadMetrics*) arguments);
-    currentThreadPointer-> burstTime = burst;
-    currentThreadPointer-> tat = timeTaken;
-
+    pthread_t tid = currentThreadPointer -> tid;
+    currentThreadPointer-> burstTime = timespecToDouble(burstStart, burstEnd);
+    currentThreadPointer-> tat = timespecToDouble(start, end);;
     return NULL;
 }
 void createTattr(pthread_attr_t *tattr, int policy, int inherit, struct sched_param *schedParam) {
@@ -67,21 +74,63 @@ void createTattr(pthread_attr_t *tattr, int policy, int inherit, struct sched_pa
 }
 
 void displayThreadMetrics() {
+    printf("Thread ID\t\tTurn around time\t\tBurst time\n\n");
     int threadsLength = sizeof(threads) / sizeof(threads[0]);
-    double averageTAT = 0;
+    double turnAroundTimeAvg = 0;
+    double burstTimeAvg = 0;
     for(int i = 0; i < threadsLength; i++) {
         struct threadMetrics thread = *threads[i];
         printf("%lu\t\t", thread.tid);
-        printf("%.4lf\n\n", thread.tat);
-        averageTAT += thread.tat;
+        printf("%.4lf\t\t", thread.tat);
+        printf("%.4lf\n\n", thread.burstTime);
+        turnAroundTimeAvg += thread.tat;
+        burstTimeAvg += thread.burstTime;
     }
-    averageTAT /= threadsLength;
-    printf("Average Turn Around Time: %lf\n", averageTAT);
+    turnAroundTimeAvg /= threadsLength;
+    burstTimeAvg /= threadsLength;
+    printf("Average Turn Around Time: %lf\n"
+            "Average Burst Time: %lf\n", turnAroundTimeAvg, burstTimeAvg);
+}
+
+void printAffinity(cpu_set_t *mask) {
+    long nproc = sysconf(_SC_NPROCESSORS_ONLN);
+    printf("sched_getaffinity = ");
+    for(int i = 0; i < nproc; i++) {
+        printf("%d ", CPU_ISSET(i, mask));
+    }
+    printf("\n");
+}
+
+void setAffinity() {
+    int result = 0;
+    cpu_set_t  mask;
+
+    result = sched_getaffinity(0, sizeof(cpu_set_t), &mask);
+    if(result != 0) {
+        fprintf(stderr, "Failed to set affinity: %s", strerror(errno));
+    }
+    printAffinity(&mask);
+    printf("sched_getcpu = %d\n", sched_getcpu());
+
+    CPU_ZERO(&mask);
+    CPU_SET(0, &mask);
+    result = sched_setaffinity(0, sizeof(mask), &mask);
+    if(result != 0) {
+        fprintf(stderr, "Failed to set affinity: %s", strerror(errno));
+    }
+
+    result = sched_getaffinity(0, sizeof(cpu_set_t), &mask);
+    if(result != 0) {
+        fprintf(stderr, "Failed to set affinity: %s", strerror(errno));
+    }
+    printAffinity(&mask);
+    printf("sched_getcpu = %d\n", sched_getcpu());
 }
 
 int main() {
+
+    setAffinity(); //set to 1 core
     //setup column headers
-    printf("Thread ID\t\tTurn around time\n\n");
 
     //setting attr features of pthread
     struct sched_param schedParam = 

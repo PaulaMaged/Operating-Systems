@@ -21,7 +21,13 @@ void clockGetTime() {
     }
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
     int dumdum = 0;
-    printf("clockGetTime took: some time\n");
+    int totalSecs = end.tv_sec - start.tv_sec;
+    clock_t totalNsecs = end.tv_nsec - start.tv_nsec;
+    if(totalSecs > 0 && totalNsecs < 0) {
+        totalSecs--;
+        totalNsecs += 1000000000;
+    }
+    printf("clockGetTime took: %ds : %ldns\n", totalSecs, totalNsecs);
 }
 
 void useClock() {
@@ -32,7 +38,7 @@ void useClock() {
     }
     double end = (double) clock();
     double timeDiff = (end - start) / CLOCKS_PER_SEC;
-    printf("clockGetTime took: some time\n");
+    printf("clock() took: %lf\n", timeDiff);
 }
 
 void printAffinity(cpu_set_t *mask) {
@@ -44,7 +50,7 @@ void printAffinity(cpu_set_t *mask) {
     printf("\n");
 }
 
-int main() {
+void setAffinity() {
     int result = 0;
     cpu_set_t  mask;
 
@@ -68,7 +74,10 @@ int main() {
     }
     printAffinity(&mask);
     printf("sched_getcpu = %d\n", sched_getcpu());
+}
 
+int main() {
+    setAffinity();
     clockGetTime();
     useClock();
     return EXIT_SUCCESS;
